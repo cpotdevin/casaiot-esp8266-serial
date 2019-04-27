@@ -26,8 +26,8 @@ Made by: ----- María Carlina Hernández ---- Developer at Ubidots Inc
          https://github.com/jotathebest
 */
 
-#ifndef __UbidotsESP8266_H_
-#define __UbidotsESP8266_H_
+#ifndef __CasaIoTESP8266_H_
+#define __CasaIoTESP8266_H_
 
 #include <ESP8266WiFi.h>
 
