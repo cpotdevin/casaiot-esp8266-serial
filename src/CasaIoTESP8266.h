@@ -32,7 +32,7 @@ Made by: ----- María Carlina Hernández ---- Developer at Ubidots Inc
 #include <ESP8266WiFi.h>
 
 namespace {
-    const char *  SERVER = “casa-iot.cpotdevin.com";
+    const char *  SERVER = "casa-iot.cpotdevin.com";
     const int  PORT = 9012;
 }
 
