@@ -26,7 +26,7 @@ Made by: ----- María Carlina Hernández ---- Developer at Ubidots Inc
          https://github.com/jotathebest
 */
 
-#include "UbidotsESP8266.h"
+#include "CasaIoTESP8266.h"
 
 /***************************************************************************
 CONSTRUCTOR
