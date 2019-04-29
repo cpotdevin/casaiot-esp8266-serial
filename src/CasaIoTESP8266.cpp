@@ -36,9 +36,7 @@ CONSTRUCTOR
  * Constructor.
  */
 
-Ubidots::Ubidots(const char* token, const char* server) {
-    _token = token;
-}
+Ubidots::Ubidots(const char* server) {}
 
 /***************************************************************************
 FUNCTIONS TO MANAGE DATA

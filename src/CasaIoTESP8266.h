@@ -38,7 +38,7 @@ namespace {
 
 class Ubidots {
  public:
-    Ubidots(const char* token, const char* server = SERVER);
+    Ubidots(const char* server = SERVER);
     bool wifiConnection(const char *ssid, const char *pass);
     void readData();
  private:
