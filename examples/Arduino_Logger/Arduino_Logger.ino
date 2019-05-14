@@ -1,76 +1,143 @@
-/****************************************
- * Define Constants
- ****************************************/
 namespace {
-  bool flow_control = true; // control the flow of the requests
-  const char * USER_AGENT = "UbidotsESP8266"; // Assgin the user agent
-  const char * VERSION =  "1.0"; // Assign the version
-  const char * METHOD = "POST"; // Set the method
-  const char * TOKEN = "........"; // Assign your Ubidots TOKEN
-  const char * DEVICE_LABEL = "ESP8266"; // Assign the device label
-  const char * VARIABLE_LABEL = "temp"; // Assign the variable label
+  const char * TOKEN = "<token>";
+  const int MEASURE = 0;
+  const int SEND_MEASUREMENTS = 1;
+  const int READ_ROOM_DATA = 2;
+  const int NUM_STATES = 3;
+  const int CUARTO1_PIN = 2;
+  const int CUARTO2_PIN = 3;
+  const int CUARTO3_PIN = 4;
+  const int CUARTO4_PIN = 5;
+  const int CUARTO5_PIN = 6;
+  const int CUARTO6_PIN = 7;
+  const int CUARTO7_PIN = 8;
+  const int CUARTO8_PIN = 9;
 }
 
-char telemetry_unit[100]; // response of the telemetry unit
+int currentPowerConsumption = 0;
 
-/* Space to store values to send */
-char str_sensor1[10];
-char str_sensor2[10];
+int currentState = 0;
 
-/****************************************
- * Main Functions
- ****************************************/
+bool waitingForResponse = false;
+bool waitingForRoomData = false;
+
+char telemetryUnitResponse[100];
+
 void setup() {
   Serial.begin(115200);
-  Serial1.begin(115200);
+
+  pinMode(2, OUTPUT);
+  digitalWrite(2, LOW);
+
+  pinMode(3, OUTPUT);
+  digitalWrite(3, LOW);
+
+  pinMode(4, OUTPUT);
+  digitalWrite(4, LOW);
+
+  pinMode(5, OUTPUT);
+  digitalWrite(5, LOW);
+
+  pinMode(6, OUTPUT);
+  digitalWrite(6, LOW);
+
+  pinMode(7, OUTPUT);
+  digitalWrite(7, LOW);
+
+  pinMode(8, OUTPUT);
+  digitalWrite(8, LOW);
+
+  pinMode(9, OUTPUT);
+  digitalWrite(9, LOW);
+
+  delay(10000);
 }
 
 void loop() {
+  if (!waitingForResponse) {
+    switch (currentState) {
+      case MEASURE:
+        measure();
+        break;
+      case SEND_MEASUREMENTS:
+        sendMeasurements();
+        waitingForResponse = true;
+        break;
+      case READ_ROOM_DATA:
+        requestRoomData();
+        waitingForResponse = true;
+        waitingForRoomData = true;
+        break;
+    }
+    currentState = (currentState + 1)%NUM_STATES;
+  } else {
+    readResponseData();
+  }
+}
+
+void measure() {
+
+}
+
+void sendMeasurements() {
   char* command = (char *) malloc(sizeof(char) * 128);
-  /* Wait for the server response to read the values and built the command */
-  /* While the flag is true it will take the sensors readings, build the command,
-     and post the command to Ubidots */
-  if (flow_control) {
-    /* Analog reading */
-    float sensor1 = analogRead(A0);
-    float sensor2 = analogRead(A1);
+  char varInString[10];
+  dtostrf(currentPowerConsumption, 4, 2, varInString);
 
-    /* 4 is mininum width, 2 is precision; float value is copied onto str_sensor*/
-    dtostrf(sensor1, 4, 2, str_sensor1);
-    dtostrf(sensor2, 4, 2, str_sensor2);
+  sprintf(command, "init#POST|%s|consumo:%s|end#final", TOKEN, varInString);
+  Serial.print(command);
 
-    /* Building the logger command */
-    sprintf(command, "init#");
-    sprintf(command, "%s%s/%s|%s|%s|", command, USER_AGENT, VERSION, METHOD, TOKEN);
-    sprintf(command, "%s%s=>", command, DEVICE_LABEL);
-    sprintf(command, "%s%s:%s", command, VARIABLE_LABEL, str_sensor1);
-    sprintf(command, "%s|end#final", command);
+  free(command);
 
-    /* Prints the command sent */
-    //Serial.println(command);// uncomment this line to print the command
+  waitingForResponse = true;
+}
 
-    /* Sends the command to the telemetry unit */
-    Serial1.print(command);
-    /* free memory*/
-    free(command);
-    /* Change the status of the flag to false. Once the data is sent, the status
-       of the flag will change to true again */
-    flow_control = false;
-  }
+void requestRoomData() {
+  char* command = (char *) malloc(sizeof(char) * 128);
 
-  /* Reading the telemetry unit */
+  sprintf(command, "init#GET|%s|cuarto1,cuarto2,cuarto3,cuarto4,cuarto5,cuarto6,cuarto7,cuarto8|end#final", TOKEN);
+  Serial.print(command);
+
+  free(command);
+
+  waitingForResponse = true;
+  waitingForRoomData = true;
+}
+
+void readResponseData() {
   int i = 0;
-  while (Serial1.available() > 0) {
-    telemetry_unit[i++] = (char)Serial1.read();
-    /* Change the status of the flag; allows the next command to be built */
-    flow_control = true;
+  int dotCounter = 0;
+  while (Serial.available() > 0) {
+    char letter = (char) Serial.read();
+    if (letter == '.') {
+      dotCounter++;
+    }
+    if (3 < dotCounter) {
+      delay(5000);
+      currentState = MEASURE;
+      break;
+    }
+    telemetryUnitResponse[i++] = letter;
+    waitingForResponse = false;
   }
 
-  if (flow_control) {
-    /* Print the server response -> OK */
-    Serial.write(telemetry_unit);
-    /* free memory */
-    memset(telemetry_unit, 0, i);
+  if (!waitingForResponse && waitingForRoomData) {
+    delay(200);
+    char* response = strtok(telemetryUnitResponse, " ");
+
+    if (strncmp(response,"OK", 2) == 0) {
+      int i = 2;
+      while (i < 10) {
+        response = strtok(NULL, " ");
+        if (strncmp(response, "0", 1) == 0) {
+          digitalWrite(i, LOW);
+        } else {
+          digitalWrite(i, HIGH);
+        }
+        i++;
+      }
+    }
+    waitingForRoomData = false;
   }
 
   delay(1000);

@@ -1,29 +1,18 @@
+#include <CasaIoTESP8266.h>
 
-/****************************************
- * Include Libraries
- ****************************************/
-#include "UbidotsESP8266.h"
-
-/****************************************
- * Define Constants
- ****************************************/
-namespace { 
-  const char * WIFISSID = "Put_your_WIFI_SSID_here"; // Assign your WiFi SSID 
-  const char * PASSWORD = "Put_your_WIFI_password_here"; // Assign your WiFi password
-  const char * TOKEN = "Put_your_Ubidots_Token_here"; // Assign your Ubidots TOKEN
+namespace {
+  const char * WIFISSID = "<WiFi name>";
+  const char * PASSWORD = "<WiFi password>";
 }
 
-Ubidots client(TOKEN);
+Ubidots client;
 
-/****************************************
- * Main Functions
- ****************************************/ 
 void setup() {
   Serial.begin(115200);
   client.wifiConnection(WIFISSID, PASSWORD);
 }
 
 void loop() {
-  client.readData(); // Reads the command from the logger
+  client.readData();
   delay(1000);
 }
